@@ -18,7 +18,7 @@ import { toPage } from "./page/routes";
 import { AddRealmRoute } from "./realm/routes/AddRealm";
 import { routes } from "./routes";
 import useIsFeatureEnabled, { Feature } from "./utils/useIsFeatureEnabled";
-
+import { useLocation } from 'react-router-dom';
 import "./page-nav.css";
 
 type LeftNavProps = { title: string; path: string; id?: string };
@@ -59,6 +59,9 @@ const LeftNav = ({ title, path, id }: LeftNavProps) => {
 };
 
 export const PageNav = () => {
+  const location = useLocation();
+  const activeRoute = location.pathname; 
+  const { realm } = useRealm(); 
   const { t } = useTranslation();
   const { hasSomeAccess } = useAccess();
   const { componentTypes } = useServerInfo();
@@ -112,13 +115,21 @@ export const PageNav = () => {
                 realmRepresentation?.organizationsEnabled && (
                   <LeftNav title="organizations" path="/organizations" />
                 )}
-              <LeftNav title="clients" path="/clients" />
+           {activeRoute !== `/${realm}/users`&& activeRoute !== `/${realm}/permissions` && (
+        <LeftNav title="clients" path="/clients" />
+      )}
+              {/* <LeftNav title="clients " path="/clients" /> */}
               <LeftNav title="clientScopes" path="/client-scopes" />
               <LeftNav title="realmRoles" path="/roles" />
-              <LeftNav title="users" path="/users" />
+            
+            <LeftNav title="users" path="/users" />
+
               <LeftNav title="groups" path="/groups" />
               <LeftNav title="sessions" path="/sessions" />
               <LeftNav title="events" path="/events" />
+              {(activeRoute === `/${realm}/users` ||  activeRoute === `/${realm}/permissions`)&&(
+        <LeftNav title="permissions" path="/permissions" />
+      )}
             </NavGroup>
           )}
 
