@@ -115,7 +115,7 @@ export const PageNav = () => {
                 realmRepresentation?.organizationsEnabled && (
                   <LeftNav title="organizations" path="/organizations" />
                 )}
-           {activeRoute !== `/${realm}/users`&& activeRoute !== `/${realm}/permissions` && (
+           {activeRoute !== `/${realm}/users/add-user`&& activeRoute !== `/${realm}/permissions` && (
         <LeftNav title="clients" path="/clients" />
       )}
               {/* <LeftNav title="clients " path="/clients" /> */}
@@ -127,7 +127,7 @@ export const PageNav = () => {
               <LeftNav title="groups" path="/groups" />
               <LeftNav title="sessions" path="/sessions" />
               <LeftNav title="events" path="/events" />
-              {(activeRoute === `/${realm}/users` ||  activeRoute === `/${realm}/permissions`)&&(
+              {(activeRoute === `/${realm}/users/add-user` ||  activeRoute === `/${realm}/permissions`)&&(
         <LeftNav title="permissions" path="/permissions" />
       )}
             </NavGroup>

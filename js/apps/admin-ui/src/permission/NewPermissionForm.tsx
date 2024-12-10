@@ -4,23 +4,23 @@ import { useAdminClient } from "../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import AddRoleModal from './modals/AddRoleModal';
-import { fetchRolesForClient, createRole, fetchPoliciesForClient, fetchResourcesForClient, fetchScopesForClient, createScopePermission } from "./api/RoleApi";
+import AddRolePolicyModal from "./modals/AddRolePolicyModal";
+import { fetchRolesForClient, createRole, fetchPoliciesForClient, fetchResourcesForClient, fetchScopesForClientResource, createScopePermission, createRolePolicy } from "./api/RoleApi";
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import { PlusIcon } from '@patternfly/react-icons';
-import { ArrowRightIcon } from '@patternfly/react-icons';
-import { Divider } from '@patternfly/react-core';
+import { ArrowRightIcon, ArrowDownIcon } from '@patternfly/react-icons';
+import { Divider, PageSection } from '@patternfly/react-core';
 import AsyncSelect from 'react-select/async';
 import Select from 'react-select';
 import "./permission.css";
+import { Title } from '@patternfly/react-core';
 
 const NewPermissionForm: React.FC = () => {
     const { adminClient } = useAdminClient();
     const { t } = useTranslation();
     const { addAlert, addError } = useAlerts();
-    // State to store the clients fetched from Keycloak
     const [clients, setClients] = useState<ClientRepresentation[]>([]);
     const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
     const [roles, setRoles] = useState<RoleRepresentation[]>([]);
@@ -29,16 +29,28 @@ const NewPermissionForm: React.FC = () => {
     const [selectedResources, setSelectedResources] = useState<any[]>([]);
     const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
     const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
-    const [availableOptions, setAvailableOptions] = useState<ScopeRepresentation[]>([]); // For storing available options
-    const [selectedOptions, setSelectedOptions] = useState<ScopeRepresentation[]>([]); // For storing selected options
-    // Fetch all clients from Keycloak
+    const [availableOptions, setAvailableOptions] = useState<ScopeRepresentation[]>([]);
+    const [selectedOptions, setSelectedOptions] = useState<ScopeRepresentation[]>([]);
+    const [isSmallScreen, setIsSmallScreen] = useState<boolean>(window.innerWidth <= 800);
+    useEffect(() => {
+        const handleResize = () => {
+            setIsSmallScreen(window.innerWidth <= 850);
+        };
+        handleResize();
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
+
     const fetchAllClients = async () => {
         try {
             const fetchedClients = await adminClient.clients.find();
-            setClients(fetchedClients); // Set the clients in state
+            setClients(fetchedClients);
         } catch (error) {
             console.error("Error fetching clients:", error);
-            addError("clientFetchError", error);
+            addError("client could not Fetch", error);
         }
     };
 
@@ -46,67 +58,6 @@ const NewPermissionForm: React.FC = () => {
         fetchAllClients();
     }, []);
 
-    const handleClientSelect = async (selectedOption: { value: string; label: string } | null) => {
-        const selectedClientId = selectedOption ? selectedOption.value : "";
-        setSelectedClientId(selectedClientId);
-        if (!selectedClientId) {
-            addAlert("Please select a client first");
-        }
-        try {
-            setSelectedOptions([]);
-            const roles = await fetchRolesForClient(adminClient, selectedClientId);
-            setRoles(roles);
-            const policy = await fetchPoliciesForClient(adminClient, selectedClientId);
-            setPolicy(policy || []);
-            const resource = await fetchResourcesForClient(adminClient, selectedClientId);
-            setResource(resource);
-            const scopes = await fetchScopesForClient(adminClient, selectedClientId);
-            setAvailableOptions(scopes);
-
-        } catch (error) {
-            addError("Error fetching roles", error);
-            console.error("Error fetching roles:", error);
-        }
-    };
-
-    const handleSubmit = async (formData: { name: string; description: string }) => {
-        if (!selectedClientId) {
-            return;
-        }
-        try {
-            const newRole = await createRole(adminClient, selectedClientId, formData);
-            console.log("Role Created:", newRole);
-            setIsModalOpen(false);  // Close the modal after successful creation
-        } catch (error) {
-            addError("Error creating roles", error)
-            console.error("Error creating role:", error);
-        }
-    };
-    const handleRoleSelect = (selectedOption: { value: string; label: string } | null) => {
-        if (selectedOption) {
-            setSelectedRoleId(selectedOption.value);
-        } else {
-            setSelectedRoleId(null);
-        }
-    };
-    const handlePolicySelect = (selected: { value: string; label: string | undefined } | null) => {
-        if (selected) {
-            setSelectedPolicyId(selected.value);
-        } else {
-            setSelectedPolicyId(null);
-        }
-    };
-
-    const handleResourceChange = (
-        selected: { value: string, label: string } | null
-    ) => {
-        if (selected) {
-            const selectedId = selected.value;
-            setSelectedResources([selected]);
-        } else {
-            setSelectedResources([]);
-        }
-    };
     const [isModalOpen, setIsModalOpen] = useState(false);
     const handleOpenModal = () => setIsModalOpen(true);
     const handleCloseModal = () => setIsModalOpen(false);
@@ -122,6 +73,172 @@ const NewPermissionForm: React.FC = () => {
             prevSelected.filter((item) => item.id !== option.id)
         );
     };
+
+    const handleClientSelect = async (selectedOption: { value: string; label: string } | null) => {
+        const selectedClientId = selectedOption ? selectedOption.value : "";
+        setSelectedClientId(selectedClientId);
+        setSelectedResources([]);
+        setSelectedOptions([]);
+        setAvailableOptions([]);
+        if (!selectedClientId) {
+            addAlert("Please select a client first");
+        }
+        try {
+
+            setRoles([]);
+            setPolicy([]);
+            setResource([]);
+            setSelectedRoleId(null);
+            setSelectedPolicyId(null);
+
+            const roles = await fetchRolesForClient(adminClient, selectedClientId);
+            setRoles(roles);
+
+
+            const resource = await fetchResourcesForClient(adminClient, selectedClientId);
+            setResource(resource || []);
+        } catch (error) {
+            addError("Error Could not fetching All required data", error);
+        }
+    };
+
+    const filteredRoles = roles
+        .filter(role => role.id && role.name)
+        .map(role => ({
+            id: role.id!,
+            name: role.name!,
+        }));
+
+
+    const handleSubmitRole = async (formData: { name: string; description: string }) => {
+        if (!selectedClientId) {
+            return;
+        }
+        try {
+
+            const newRole = await createRole(adminClient, selectedClientId, formData);
+            console.log("Role Created:", newRole);
+            addAlert("Successfully Created Role");
+        } catch (error) {
+            addError("Error Roles has not been created", error);
+
+        }
+    };
+
+    const handlePolicySubmit = async (formData: { name: string; description: string; roles: { id: string; required: boolean }[] }) => {
+        console.log("Policy submitted with the following data:", formData);
+
+        if (selectedClientId === null) {
+            addError("Please select a client to add roles", "")
+            return;
+        }
+        const rolesWithRequired = formData.roles.map((role) => ({
+            id: role.id,  // Use `role.id` instead of `roleId`
+            required: role.required,
+        }));
+
+        try {
+            await createRolePolicy(adminClient, selectedClientId, {
+                name: formData.name,
+                description: formData.description,
+                roles: rolesWithRequired,
+            });
+            addAlert("Successfully Created Policy");
+            console.log(formData.roles[0])
+            await updatePoliciesForRole(formData.roles[0].id);
+
+        } catch (error) {
+            console.error("Error creating role policy:", error);
+            addError("Error Roles Policy has not bee created", error)
+        }
+    };
+
+    const updatePoliciesForRole = async (roleId: string) => {
+        try {
+            const fetchedPolicies = await fetchPoliciesForClient(adminClient, selectedClientId!, 0, 11, false, "role");
+            const filteredPolicies = fetchedPolicies?.filter((policyItem: PolicyRepresentation) => {
+                if (policyItem.config && policyItem.config.roles) {
+                    try {
+                        const roleIds = JSON.parse(policyItem.config.roles).map((role: { id: string }) => role.id);
+                        return roleIds.includes(roleId);
+                    } catch (error) {
+                        console.error("Error parsing roles in policy config:", error);
+                        addError("Error parsing roles and could not policy updates", error)
+                        return false;
+                    }
+                }
+                return false;
+            });
+
+            setPolicy(filteredPolicies || []);
+        } catch (error) {
+            addError("Error fetching policies after policy creation", error);
+        }
+    };
+
+    const handleRoleSelect = async (selectedOption: { value: string; label: string } | null) => {
+        if (selectedOption) {
+            setSelectedRoleId(selectedOption.value);
+
+            try {
+                const fetchedPolicies = await fetchPoliciesForClient(adminClient, selectedClientId!, 0, 11, false, "role");
+                const filteredPolicies = fetchedPolicies?.filter((policyItem: PolicyRepresentation) => {
+                    if (policyItem.config && policyItem.config.roles) {
+                        try {
+                            const roleIds = JSON.parse(policyItem.config.roles).map((role: { id: string }) => role.id);
+                            return roleIds.includes(selectedOption.value);
+                        } catch (error) {
+                            console.error("Error parsing roles in policy config:", error);
+                            return false;
+                        }
+                    }
+                    return false;
+                });
+
+
+                setPolicy(filteredPolicies || []);
+            } catch (error) {
+                addError("Error fetching policies against role", error);
+            }
+        } else {
+            setSelectedRoleId(null);
+            setPolicy([]);
+        }
+    };
+
+
+    const handlePolicySelect = (selected: { value: string; label: string | undefined } | null) => {
+        if (selected) {
+            setSelectedPolicyId(selected.value);
+        } else {
+            setSelectedPolicyId(null);
+        }
+    };
+
+    const handleResourceChange = async (
+        selected: { value: string, label: string } | null
+    ) => {
+        if (selected) {
+            const selectedId = selected.value;
+            setSelectedResources([selected]);
+            if (selectedClientId) {
+                try {
+
+                    setSelectedOptions([]);
+                    const scopes = await fetchScopesForClientResource(adminClient, selectedClientId, selectedId);
+                    setAvailableOptions(scopes);
+
+                } catch (error) {
+                    console.error("Error fetching scopes for resource:", error);
+                    addError("Resources could not fetching scopes", error);
+                }
+            }
+
+        } else {
+            setSelectedResources([]);
+        }
+    };
+
     const loadResources = (inputValue: string) =>
         new Promise<any[]>((resolve) => {
             const filteredOptions = resource
@@ -145,7 +262,6 @@ const NewPermissionForm: React.FC = () => {
                 return;
             }
             const selectedResourceIds = selectedResources.map((resourceItem) => resourceItem.value);
-            // Validate if there are selected resource IDs
             if (selectedResourceIds.length === 0) {
                 addError("Please select at least one resource.", "");
                 return;
@@ -154,34 +270,56 @@ const NewPermissionForm: React.FC = () => {
                 .map((option) => option.id)
                 .filter((id): id is string => id !== undefined);
 
-            // Check if we have any selected scope IDs
+            const selectedClient = clients.find((client) => client.id === selectedClientId);
+
+            if (!selectedClient) {
+                addError("No client found for the selected client ID.", "");
+                return;
+            }
+
+            const clientName = selectedClient.clientId;
+
             if (selectedScopeIds.length === 0) {
                 alert("Please select at least one scope.");
                 return;
             }
-            const result = await createScopePermission(
-                adminClient,
-                selectedClientId,
-                selectedPolicyId,
-                selectedResourceIds,
-                selectedScopeIds
-            );
 
-            if (result.response == 201) {
-                addAlert("Successfully created scope permission");
-            }
-            else {
-                addError("Failed to create scope permission", result.message)
+            for (let i = 0; i < selectedScopeIds.length; i++) {
+                const scopeId = selectedScopeIds[i];
+
+                const scopeName = selectedOptions
+                    .filter((option) => option.id === scopeId)
+                    .map((option) => option.name)[0];
+
+                const name = `${clientName}.${scopeName}.perm`;
+
+                console.log(clientName);
+                const result = await createScopePermission(
+                    adminClient,
+                    selectedClientId,
+                    selectedPolicyId,
+                    selectedResourceIds,
+                    [scopeId],
+                    name
+                );
+
+                if (result?.response === 201) {
+                    addAlert(`Successfully created permission`);
+                }
+                else {
+                    addError(`Failed to create permission for scope ${scopeId}`, "");
+                }
             }
         } catch (error) {
-            addError("Please select all the necessary fields", "");
+            addError("Failed to create scope permission", "");
         }
     };
 
     return (
-        <section className='pf-v5-c-page__main-breadcrumb'>
-            <div className="pf-v5-c-main-section">
-                <h1 className='pf-v5-c-main-heading'>Create Permission</h1>
+        <PageSection variant="light" className="pf-v5-u-p-0">
+            <section className='pf-v5-c-page__main-breadcrumb pf-v5-c-main-section pf-v5--font-family'>
+                <Title headingLevel="h1" className="pf-v5-u-mt-sm pf-v5--font-family">Create Permission</Title>
+
                 <Divider />
                 <div className="pf-v5-c-flex">
                     <label>Select Client</label>
@@ -189,8 +327,8 @@ const NewPermissionForm: React.FC = () => {
                         className="pf-v5-c__react-select"
                         options={clients.length > 0
                             ? clients.map((client) => ({
-                                value: client.id || '',  // Ensure value is a string, fallback to empty string if client.id is undefined
-                                label: client.clientId || '',  // Ensure label is a string, fallback to 'Unknown Client' if client.clientId is undefined
+                                value: client.id || '',
+                                label: client.clientId || '',
                             }))
                             : [{ value: '', label: t("No Clients Found") }]
                         }
@@ -201,46 +339,66 @@ const NewPermissionForm: React.FC = () => {
                         onChange={handleClientSelect}
                         placeholder={t("Select Client")}
                         isDisabled={clients.length === 0}
+                        theme={(theme) => ({
+                            ...theme,
+                            colors: {
+                                ...theme.colors,
+                                primary: "rgb(247, 124, 26)",
+
+                            },
+                        })}
                     />
                 </div>
                 <div className='pf-v5-c-flex'>
                     <label>Select Role</label>
-                    <Select
-                        className="pf-v5-c__react-select form__select--role"
-                        options={roles.length > 0
-                            ? roles.map((role) => ({
-                                value: role.id || '', // Ensure value is always a string
-                                label: role.name || '', // Fallback label if name is undefined
-                            }))
-                            : []
-                        }
-                        value={selectedRoleId
-                            ? { value: selectedRoleId, label: roles.find(r => r.id === selectedRoleId)?.name || '' }
-                            : null
-                        }
-                        onChange={handleRoleSelect}
-                        placeholder={selectedClientId ? t("Select a role") : t("Please select a client first")}
-                        noOptionsMessage={() => {
-                            if (!selectedClientId) {
-                                return 'Please select a client to view Roles.';
+                    <div className='pf-v5-c-role-select'>
+                        <Select
+                            className="pf-v5-c__react-select form__select--role"
+                            options={roles.length > 0
+                                ? roles.map((role) => ({
+                                    value: role.id || '',
+                                    label: role.name || '',
+                                }))
+                                : []
                             }
-                            return (policy && policy.length === 0) ? 'No Roles available for this client.' : 'No Roles available';
-                        }}
+                            value={selectedRoleId
+                                ? { value: selectedRoleId, label: roles.find(r => r.id === selectedRoleId)?.name || '' }
+                                : null
+                            }
+                            onChange={handleRoleSelect}
+                            placeholder={selectedClientId ? t("Select a role") : t("Please select a client first")}
+                            noOptionsMessage={() => {
+                                if (!selectedClientId) {
+                                    return 'Please select a client to view Roles.';
+                                }
+                                return (policy && policy.length === 0) ? 'No Roles available for this client.' : 'No Roles available';
+                            }}
+                            theme={(theme) => ({
+                                ...theme,
+                                colors: {
+                                    ...theme.colors,
+                                    primary: "rgb(247, 124, 26)",
 
-                    />
-                    <div title='please select a client first'>
-                        <PlusIcon className='pf-v5-c__add-icon'
-                            onClick={selectedClientId ? handleOpenModal : undefined}
-                            style={{ cursor: selectedClientId ? 'pointer' : 'not-allowed' }}
+                                },
+                            })}
+
                         />
-                        <AddRoleModal
-                            isOpen={isModalOpen}
-                            onClose={handleCloseModal}
-                            selectedClientId={selectedClientId} // This will only pass a string value here
-                            onSubmit={handleSubmit}
-                        />
+                        <div title='please select a client first' className='add-icon-container'>
+                            <PlusIcon className='pf-v5-c__add-icon'
+                                onClick={selectedClientId ? handleOpenModal : undefined}
+                                style={{ cursor: selectedClientId ? 'pointer' : 'not-allowed' }}
+                            />
+
+                            <AddRolePolicyModal
+                                isOpen={isModalOpen}
+                                onClose={handleCloseModal}
+                                onSubmitRole={handleSubmitRole}
+                                onSubmitPolicy={handlePolicySubmit}
+                                roles={filteredRoles}
+
+                            />
+                        </div>
                     </div>
-
                 </div>
                 <div className="pf-v5-c-flex">
                     <label>Select Role Policy</label>
@@ -250,8 +408,8 @@ const NewPermissionForm: React.FC = () => {
                             ? policy
                                 .filter(p => p.id && p.name)
                                 .map(p => ({
-                                    value: p.id!, // Non-null assertion as `id` is required and must be a string
-                                    label: p.name || 'Unknown Policy' // Provide a fallback value for `label` in case `name` is undefined
+                                    value: p.id!,
+                                    label: p.name || 'Unknown Policy'
                                 }))
                             : []
                         }
@@ -260,13 +418,22 @@ const NewPermissionForm: React.FC = () => {
                             : null
                         }
                         onChange={handlePolicySelect}
-                        placeholder={selectedClientId ? t("Select a policy") : t("Please select a client first")}
+                        placeholder={selectedClientId ? t("Select a policy") : t("Please select a Role")}
                         noOptionsMessage={() => {
-                            if (!selectedClientId) {
-                                return 'Please select a client to view policy.';
+                            if (!selectedRoleId) {
+                                return 'Please select a role to view policies.';
                             }
-                            return (policy && policy.length === 0) ? 'No Policy available for this client.' : 'No Policy available';
+                            return (policy && policy.length === 0) ? 'No Policy available for this Role.' : 'No Policy available';
                         }}
+                        theme={(theme) => ({
+                            ...theme,
+                            colors: {
+                                ...theme.colors,
+                                primary: "rgb(247, 124, 26)",
+
+
+                            },
+                        })}
                     />
 
                 </div>
@@ -275,13 +442,13 @@ const NewPermissionForm: React.FC = () => {
 
                     <AsyncSelect
                         className="pf-v5-c__react-select"
-                        cacheOptions
                         defaultOptions={resource?.map((resourceItem) => ({
-                            value: resourceItem._id || '', // Fallback if _id is undefined
-                            label: resourceItem.name || '', // Fallback if resource.name is undefined
+                            value: resourceItem._id || '',
+                            label: resourceItem.name || '',
                         })) || []}
                         loadOptions={loadResources}
-                        onChange={handleResourceChange} // Handle the multi-select change event
+                        onChange={handleResourceChange}
+                        value={selectedResources[0] || null}
                         placeholder={selectedClientId ? "Select a Resource" : "Please select a client first"}
                         noOptionsMessage={() => {
                             if (selectedClientId === null) {
@@ -289,16 +456,24 @@ const NewPermissionForm: React.FC = () => {
                             }
                             return (resource && resource.length === 0) ? 'No resources available for this client.' : 'No Resources available';
                         }}
+                        theme={(theme) => ({
+                            ...theme,
+                            colors: {
+                                ...theme.colors,
+                                primary: "rgb(247, 124, 26)",
+
+                            },
+                        })}
                     />
                 </div>
 
                 <div className="pf-v5-c-multi-select-container">
 
                     <div className="pf-v5-c-scope">
-                        <h3>Available Options</h3>
+                        <h3>Available Scopes</h3>
                         <ul>
                             {!selectedClientId ? (
-                                <li>{t("Please select a client first")}</li>
+                                <li style={{ color: "#8a8d90" }}>{t("Please select a client first")}</li>
                             ) : Array.isArray(availableOptions) && availableOptions.length > 0 ? (
                                 availableOptions.map((option) => (
                                     <li key={option.id}>
@@ -306,37 +481,49 @@ const NewPermissionForm: React.FC = () => {
                                     </li>
                                 ))
                             ) : (
-                                <li>{t("No available options")}</li>
+                                <li style={{ color: "#8a8d90" }}>{t("No available options")}</li>
                             )}
                         </ul>
                     </div>
                     <div>
-                        <ArrowRightIcon style={{ fontSize: '28px' }} />
+
+                        <div className='pf-v5-c-arrow-container '>
+                            {isSmallScreen ? (
+                                <ArrowDownIcon className='pf-v5-c-arrow-icon' />
+                            ) : (
+                                <ArrowRightIcon className='pf-v5-c-arrow-icon' />
+                            )}
+                        </div>
+
                     </div>
 
                     <div className="pf-v5-c-scope">
-                        <h3>Selected Options</h3>
+                        <h3>Selected Scopes</h3>
                         <ul>
-                            {/* If no client is selected, show a message */}
                             {!selectedClientId ? (
-                                <li>{t("Please select a client first")}</li>
+                                <li style={{ color: "#8a8d90" }}>{t("Please select a client first")}</li>
                             ) : Array.isArray(selectedOptions) && selectedOptions.length > 0 ? (
                                 selectedOptions.map((option) => (
-                                    <li key={option.id}>
-                                        <button className='pf-v5-c-scope-list' onClick={() => handleRemove(option)}>{option.name}</button>
+                                    <li key={option.id} className="selected-scope-item">
+                                        <button className='pf-v5-c-scope-list selected-scope' onClick={() => handleRemove(option)}>{option.name}
+
+                                        </button>
                                     </li>
                                 ))
                             ) : (
-                                <li>{t("No selected options")}</li>
+                                <li style={{ color: "#8a8d90" }}>{t("No selected options")}</li>
                             )}
                         </ul>
                     </div>
                 </div>
-                <button onClick={handleSaveRoles} className='pf-v5-c-form__button'>{t("Save")}</button>
-            </div>
+                <button onClick={handleSaveRoles} className='pf-v5-c-form__button custom-bg-color'>{t("Save")}</button>
 
-        </section>
+            </section>
+        </PageSection>
     );
 };
 
 export default NewPermissionForm;
+
+
+
