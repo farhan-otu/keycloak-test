@@ -1,5 +1,5 @@
 import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
-import {  TextControl } from "@keycloak/keycloak-ui-shared";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 import {
     ActionGroup,
     Button,
@@ -11,8 +11,8 @@ import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import useToggle from "../utils/useToggle";
-
 import "../clients/authorization/search-dropdown.css";
+
 
 export type SearchForm = {
     name?: string;
@@ -55,6 +55,7 @@ export const SearchDropdown = ({
 
     return (
         <Dropdown
+            className="pf-v5-permission-search"
             onOpenChange={toggle}
             toggle={(ref) => (
                 <MenuToggle

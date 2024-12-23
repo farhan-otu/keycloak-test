@@ -32,7 +32,7 @@
 }
 
 .pf-v5-c__react-select {
-  width: 50%;
+  width: 55%;
 }
 
 .pf-v5-c-role-select {
@@ -46,7 +46,7 @@
   gap: 5rem;
   flex-wrap: wrap;
   align-items: center;
-  width: 85%;
+  width: 75%;
 }
 
 .pf-v5-c-scope {
@@ -105,61 +105,8 @@
   font-size: 28px;
 }
 
-.pf-m-primary {
-  background-color: rgb(247, 124, 26) !important;
-}
-
 .pf-m-link {
   color: rgb(247, 124, 26) !important;
-}
-
-.pf-v5-c-tabs__link:hover {
-  --pf-v5-c-tabs__link--after--BorderColor: rgb(247, 124, 26) !important;
-}
-
-.pf-v5-c-tabs__item--m-current__link {
-  --pf-v5-c-tabs__item--m-current__link--after--BorderColor: rgb(247, 124, 26) !important;
-}
-
-.pf-v5-c-tabs__item .pf-v5-c-tabs__link {
-  color: rgb(247, 124, 26) !important;
-}
-
-.pf-v5-c-tabs__item.pf-m-current .pf-v5-c-tabs__link {
-  color: rgb(247, 124, 26) !important;
-  font-weight: bold;
-}
-
-.pf-v5-c-tabs__item.pf-m-current .pf-v5-c-tabs__link--after {
-  border-color: rgb(247, 124, 26) !important;
-  border-width: 2px;
-}
-
-.pf-v5-c-form-control--hover--after {
-
-  border-bottom: rgb(247, 124, 26) !important;
-}
-
-.pf-v5-c-form-control--hover--after--BorderBottomColor {
-  border-bottom: rgb(247, 124, 26) !important;
-}
-
-
-.pf-v5-c-form-control--focus--after--BorderBottomColor {
-  border-bottom: rgb(247, 124, 26) !important;
-}
-
-
-.pf-v5-c-form-control--m-expanded--after--BorderBottomColor {
-  border-bottom: rgb(247, 124, 26) !important;
-}
-
-.pf-v5-c-form-control:hover {
-  --pf-v5-c-form-control--after--BorderBottomColor: rgb(247, 124, 26) !important;
-}
-
-.pf-v5-c-tabs__item.pf-m-current {
-  --pf-v5-c-tabs__link--after--BorderColor: rgb(247, 124, 26) !important;
 }
 
 textarea {
@@ -167,37 +114,6 @@ textarea {
   line-height: 1rem;
 }
 
-
-.custom-form-control {
-  --pf-v5-c-form-control--hover--after--BorderBottomColor: #f77c1a;
-  --pf-v5-c-form-control--focus--after--BorderBottomColor: #f77c1a;
-  --pf-v5-c-form-control--m-expanded--after--BorderBottomColor: #f77c1a;
-
-
-  border-bottom-color: var(--pf-v5-c-form-control--hover--after--BorderBottomColor);
-  border-bottom-width: var(--pf-v5-c-form-control--focus--after--BorderBottomWidth);
-}
-
-.custom-form-control:focus {
-  border-bottom-color: var(--pf-v5-c-form-control--focus--after--BorderBottomColor);
-  border-bottom-width: var(--pf-v5-c-form-control--focus--after--BorderBottomWidth);
-}
-
-.custom-form-control:hover {
-  border-bottom-color: var(--pf-v5-c-form-control--hover--after--BorderBottomColor);
-}
-
-.custom-form-control.m-expanded {
-  border-bottom-color: var(--pf-v5-c-form-control--m-expanded--after--BorderBottomColor);
-}
-
-.pf-v5-c-form-control:focus-within {
-  --pf-v5-c-form-control--after--BorderBottomColor: rgb(247, 124, 26) !important;
-  --pf-v5-c-form-control--after--BorderBottomWidth: rgb(247, 124, 26) !important;
-
-  border-bottom-color: var(--pf-v5-c-form-control--after--BorderBottomColor);
-  border-bottom-width: var(--pf-v5-c-form-control--after--BorderBottomWidth);
-}
 
 .pf-v5-c-form-control>textarea {
   padding-top: 0.5rem;
@@ -211,24 +127,47 @@ textarea {
   width: 100%;
 }
 
-.pf-v5-c-form {
-  --pf-v5-global--gutter--md: 0.5rem;
-}
-
 .pf-v5-c-form__label {
   font-size: 0.83rem;
 }
 
+
+.pf-v5-c-spinner {
+  --pf-v5-global--primary-color--100: rgb(247, 124, 26) !important;
+
+}
+
+.custom-link-color {
+  color: rgb(247, 124, 26) !important;
+}
+
+.pf-v5-c-form-control::after {
+  /* border-bottom:#dddddd; */
+  border-bottom: 1.5px solid #dddddd;
+}
+
+.pf-set-custom-w {
+  width: 55%;
+  margin-top: 0.5rem;
+}
+
+
+
 @media (max-width: 850px) {
 
+  .pf-set-custom-w {
+    width: 85%;
+  }
+
   .pf-v5-c__react-select {
-    width: 80%;
+    width: 85%;
   }
 
   .pf-v5-c-multi-select-container {
     flex-direction: column;
     align-items: normal;
     gap: 1rem;
+    width: 90%;
   }
 
   .pf-v5-c-scope {
@@ -245,6 +184,10 @@ textarea {
 @media (max-width: 700px) {
 
   .pf-v5-c__react-select {
+    width: 90%;
+  }
+
+  .pf-set-custom-w {
     width: 90%;
   }
 
@@ -265,6 +208,10 @@ textarea {
   .pf-v5-c-flex {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .pf-set-custom-w {
+    width: 90%;
   }
 
   .pf-v5-c__react-select {

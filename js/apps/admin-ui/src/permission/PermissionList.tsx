@@ -1,7 +1,6 @@
 import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import {
-  ListEmptyState,
   PaginatingTableToolbar,
   useAlerts,
   useFetch,
@@ -34,6 +33,8 @@ import { Title, Alert } from '@patternfly/react-core';
 import Select from 'react-select';
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { Link } from "react-router-dom";
+import { toPermissionDetails } from "./routes/PermissionRoutes"
 
 type PermissionsProps = {
   clientId: string;
@@ -164,12 +165,11 @@ const PermissionList = ({
     };
 
     fetchPermissions();
-  }, [selectedClientId, first, max, search, adminClient,key]);
+  }, [selectedClientId, first, max, search, adminClient, key]);
 
   useEffect(() => {
     const fetchPolicyProviders = async () => {
       if (!selectedClientId) return;
-
       try {
         const params = {
           first: 0,
@@ -227,32 +227,46 @@ const PermissionList = ({
 
         <div className="pf-v5--font-family">
           <Title headingLevel="h1" className="pf-v5-u-ml-lg pf-v5-u-mt-md pf-v5--font-family">Permission List</Title>
-          <div className="pf-v5-c-select-client-w">
-            <label>Select a Client</label>
-            <Select
-              className="pf-v5-c__react-select"
-              options={clients.length > 0
-                ? clients.map((client) => ({
-                  value: client.id || '',
-                  label: client.clientId || '',
-                }))
-                : [{ value: '', label: t("No Clients Found") }]
-              }
-              value={selectedClientId
-                ? { value: selectedClientId, label: clients.find(c => c.id === selectedClientId)?.clientId || '' }
-                : null
-              }
-              onChange={handleClientSelect}
-              placeholder={t("Select Client")}
-              isDisabled={clients.length === 0}
-              theme={(theme) => ({
-                ...theme,
-                colors: {
-                  ...theme.colors,
-                  primary: "rgb(247, 124, 26)",
-                },
-              })}
-            />
+
+          <div className="pf-v5-u-ml-lg pf-v5-c-select-client">
+            <label className="pf-v5-u-mt-sm">Select a Client</label>
+            <div className="pf-v5-client-permission-list">
+              <Select
+                className="pf-v5-c__react-select"
+                options={clients.length > 0
+                  ? clients.map((client) => ({
+                    value: client.id || '',
+                    label: client.clientId || '',
+                  }))
+                  : [{ value: '', label: t("No Clients Found") }]
+                }
+                value={selectedClientId
+                  ? { value: selectedClientId, label: clients.find(c => c.id === selectedClientId)?.clientId || '' }
+                  : null
+                }
+                onChange={handleClientSelect}
+                placeholder={t("Select Client")}
+                isDisabled={clients.length === 0}
+                theme={(theme) => ({
+                  ...theme,
+                  colors: {
+                    ...theme.colors,
+                    primary: "rgb(247, 124, 26)",
+                  },
+                })}
+              />
+
+              <Button
+                variant="primary"
+                onClick={handleCreatePermission}
+                data-testid="create-permission"
+                className="pf-v5-c-add-permission"
+              >
+                {t("createPermission")}
+              </Button>
+            </div>
+
+
           </div>
           {(!noData || searching) && (
             <PaginatingTableToolbar
@@ -275,15 +289,6 @@ const PermissionList = ({
                       type="permission"
                     />
                   </ToolbarItem>
-                  <Button
-                    variant="primary"
-                    onClick={handleCreatePermission}
-                    data-testid="create-permission"
-                    className="pf-v5-c-add-permission"
-                  >
-                    {t("createPermission")}
-                  </Button>
-
                 </>
               }
             >
@@ -302,7 +307,20 @@ const PermissionList = ({
                   <Tbody>
                     {permissions?.map((permission, rowIndex) => (
                       <Tr key={permission.id}>
-                        <Td className="pf-v5-c-td-name">{permission.name || "NA"}</Td>
+                        <Td className="pf-v5-c-td-name">
+
+                          <Link
+                            style={{ color: "rgb(247, 124, 26)" }}
+                            // className="custom-link-color"
+                            to={toPermissionDetails({
+                              realm,
+                              clientId: selectedClientId || '',
+                              permissionType: permission.type!, // `permission.type!` assumes it's not null or undefined
+                              permissionId: permission.id!,
+                            })}
+
+                          >{permission.name || "NA"}</Link>
+                        </Td>
                         <Td>{permission.type || "NA"}</Td>
                         <Td>
                           <AssociatedPoliciesRenderer row={permission} />
@@ -312,7 +330,20 @@ const PermissionList = ({
                           actions={{
                             items: [
                               {
-                                title: t("delete"),
+                                title: t("Update"),
+                                onClick: () => {
+                                  navigate(
+                                    toPermissionDetails({
+                                      realm,
+                                      clientId: selectedClientId || '',
+                                      permissionType: permission.type!,
+                                      permissionId: permission.id!,
+                                    })
+                                  );
+                                },
+                              },
+                              {
+                                title: t("Delete"),
                                 onClick: async () => {
                                   setSelectedPermission(permission);
                                   toggleDeleteDialog();

@@ -117,7 +117,7 @@ const NewPermissionForm: React.FC = () => {
         try {
 
             const newRole = await createRole(adminClient, selectedClientId, formData);
-            console.log("Role Created:", newRole);
+          
             addAlert("Successfully Created Role");
         } catch (error) {
             addError("Error Roles has not been created", error);
@@ -258,7 +258,7 @@ const NewPermissionForm: React.FC = () => {
     const handleSaveRoles = async () => {
         try {
             if (!selectedClientId || !selectedRoleId || !selectedPolicyId || !resource.length || !selectedOptions.length) {
-                addError("Please select all the necessary fields", "");
+                addError("Please select all the necessary fields *", "");
                 return;
             }
             const selectedResourceIds = selectedResources.map((resourceItem) => resourceItem.value);
@@ -293,7 +293,6 @@ const NewPermissionForm: React.FC = () => {
 
                 const name = `${clientName}.${scopeName}.perm`;
 
-                console.log(clientName);
                 const result = await createScopePermission(
                     adminClient,
                     selectedClientId,

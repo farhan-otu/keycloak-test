@@ -19,7 +19,7 @@ import { AddRealmRoute } from "./realm/routes/AddRealm";
 import { routes } from "./routes";
 import useIsFeatureEnabled, { Feature } from "./utils/useIsFeatureEnabled";
 import { useLocation } from 'react-router-dom';
-import "./page-nav.css";
+import "./index.css";
 
 type LeftNavProps = { title: string; path: string; id?: string };
 

@@ -68,6 +68,7 @@ const AddRolePolicyModal: React.FC<AddRolePolicyModalProps> = ({
         description: '',
         roles: [],
       });
+      setActiveTabKey(0);
     }
   }, [isOpen]);
 

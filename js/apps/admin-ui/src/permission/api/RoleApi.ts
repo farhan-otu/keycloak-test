@@ -281,3 +281,61 @@ export const createScopePermission = async (
     console.log(err)
   }
 };
+
+export const updateScopePermission = async (
+  adminClient: KeycloakAdminClient,
+  selectedClientId: string,
+  selectedPermissionId: string,  // Add the permissionId for updating the existing permission
+  selectedPolicyId: string,
+  selectedResources: string[],
+  selectedScopes: string[],
+  name: string,
+) => {
+  const requestData = {
+    id: selectedClientId,
+    name: name,
+    description:"",
+    policies: selectedPolicyId ? [selectedPolicyId] : [],
+    resources: selectedResources,
+    scopes: selectedScopes,
+    type: "scope",
+   
+  };
+
+  try {
+    if (!selectedClientId) {
+      throw new Error("No client selected");
+    }
+
+    const accessToken = await adminClient.getAccessToken();
+    const baseUrl = adminClient.baseUrl;
+    const url = joinPath(
+      baseUrl,
+      "admin/realms",
+      encodeURIComponent(adminClient.realmName),
+      "clients",
+      encodeURIComponent(selectedClientId),
+      "authz/resource-server/permission/scope",
+      encodeURIComponent(selectedPermissionId) // This is the permissionId you want to update
+    );
+
+    const response = await fetchWithError(url, {
+      method: "PUT", // Use PUT method to update the resource
+      headers: {
+        ...getAuthorizationHeaders(accessToken),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestData),
+    });
+
+    if (!response.ok) {
+      const errorResponse = await response.json();
+      console.error("Error updating permission:", errorResponse);
+    }
+
+    return await response.json();
+  } catch (err) {
+    console.log(err);
+  }
+};
+
