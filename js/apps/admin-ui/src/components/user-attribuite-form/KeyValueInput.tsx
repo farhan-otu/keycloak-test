@@ -99,8 +99,6 @@ const KeyValueInput = ({
     fetchClients();
 
   }, []);
-
-
   
   const { t } = useTranslation();
   const {

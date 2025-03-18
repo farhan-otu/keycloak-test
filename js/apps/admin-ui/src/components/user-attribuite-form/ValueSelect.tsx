@@ -1,6 +1,6 @@
 import { KeycloakSelect } from "@keycloak/keycloak-ui-shared";
 import { SelectOption, TextInput } from "@patternfly/react-core";
-import { UseControllerProps, useController, useFormContext } from "react-hook-form";
+import { UseControllerProps, useController } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { DefaultValue } from "./KeyValueInput";
 import { memo, useMemo, useState } from "react";
